@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@{{ profile_user.username }} · Sphere</title>
+  <link rel="stylesheet" href="/static/css/home.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d0f14;
+      --surface:     #13161e;
+      --surface-2:   #1a1e2a;
+      --border:      #252836;
+      --accent:      #6c63ff;
+      --accent-rose: #f472b6;
+      --text-1:      #edeeff;
+      --text-2:      #8b8fa8;
+      --text-3:      #565a72;
+      --success:     #34d399;
+      --radius:      16px;
+      --font:        'Inter', system-ui, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font);
+      min-height: 100vh;
+    }
+
+    /* ── App Shell ────────────────────────────────── */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Main Content ─────────────────────────────── */
+    .profile-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 80px;
+      min-width: 0;
+    }
+
+    /* ── Toast ────────────────────────────────────── */
+    .toast-stack {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+    }
+    .toast--success { border-color: var(--success); color: var(--success); }
+    .toast--error   { border-color: #f87171; color: #f87171; }
+
+    /* ── Profile Card ─────────────────────────────── */
+    .profile-card {
+      width: 100%;
+      max-width: 720px;
+      margin: 32px auto 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    /* ── Cover Banner ─────────────────────────────── */
+    .cover-banner {
+      height: 200px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 35%, #db2777 70%, #f472b6 100%);
+      position: relative;
+    }
+    .cover-banner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* ── Avatar Zone ──────────────────────────────── */
+    .avatar-zone {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 32px;
+      margin-top: -52px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .avatar-ring {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, #4f46e5, #db2777);
+      flex-shrink: 0;
+    }
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--surface);
+      display: block;
+    }
+    .profile-avatar--placeholder {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid var(--surface);
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    /* ── Action Buttons ───────────────────────────── */
+    .profile-actions {
+      padding-bottom: 12px;
+    }
+    .btn-follow-profile {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 28px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+    .btn-follow-profile:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-following {
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border);
+      padding: 10px 28px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-following:hover { border-color: #f87171; color: #f87171; }
+    .btn-edit-profile {
+      background: transparent;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      text-decoration: none;
+      transition: all 0.15s;
+      display: inline-block;
+    }
+    .btn-edit-profile:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Profile Info ─────────────────────────────── */
+    .profile-info {
+      padding: 20px 32px 0;
+    }
+    .profile-displayname {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-1);
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+    }
+    .profile-username {
+      font-size: 15px;
+      color: var(--accent);
+      font-weight: 500;
+      margin-top: 4px;
+      display: block;
+    }
+    .profile-bio {
+      font-size: 15px;
+      color: var(--text-2);
+      margin-top: 12px;
+      line-height: 1.6;
+      max-width: 480px;
+    }
+    .profile-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .profile-meta-item {
+      font-size: 13px;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .profile-meta-item::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      background-color: var(--text-3);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      flex-shrink: 0;
+    }
+    .profile-meta-item--date::before {
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    }
+    .profile-meta-item--email::before {
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/%3E%3Cpolyline points='22,6 12,13 2,6'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/%3E%3Cpolyline points='22,6 12,13 2,6'/%3E%3C/svg%3E");
+    }
+
+    /* ── Stats Bar ────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 0;
+      padding: 24px 32px 0;
+    }
+    .stat-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0 28px 0 0;
+      color: inherit;
+      transition: opacity 0.15s;
+    }
+    .stat-btn:first-child { padding-left: 0; }
+    .stat-btn:not(:last-child) {
+      border-right: 1px solid var(--border);
+      margin-right: 28px;
+    }
+    .stat-btn:hover { opacity: 0.75; }
+    .stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-1);
+      letter-spacing: -0.5px;
+    }
+    .stat-lbl {
+      font-size: 13px;
+      color: var(--text-3);
+      font-weight: 500;
+      margin-top: 1px;
+    }
+    .stat-btn--active .stat-num { color: var(--accent); }
+    .stat-btn--active .stat-lbl { color: var(--accent); opacity: 0.7; }
+
+    /* ── Tab Bar ──────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      padding: 0 32px;
+      margin-top: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-pill {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      color: var(--text-3);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: 0.01em;
+    }
+    .tab-pill:hover { color: var(--text-2); }
+    .tab-pill--active {
+      color: var(--text-1);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Tab Panels ───────────────────────────────── */
+    .tab-panel { padding: 24px 32px; }
+
+    /* ── User List ────────────────────────────────── */
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .user-list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-radius: 14px;
+      transition: background 0.12s;
+      gap: 12px;
+    }
+    .user-list-row:hover { background: var(--surface-2); }
+
+    .user-list-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      flex: 1;
+      min-width: 0;
+    }
+    .ul-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .ul-avatar--ph {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .ul-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .ul-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ul-username {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 500;
+      margin-top: 1px;
+    }
+    .ul-bio {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ul-follow-btn,
+    .ul-unfollow-btn {
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ul-follow-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+    }
+    .ul-follow-btn:hover { opacity: 0.85; }
+    .ul-unfollow-btn {
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border);
+    }
+    .ul-unfollow-btn:hover { border-color: #f87171; color: #f87171; }
+
+    /* ── Empty State ──────────────────────────────── */
+    .empty-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 24px;
+      color: var(--text-3);
+      font-size: 15px;
+      font-weight: 500;
+      gap: 10px;
+    }
+    .empty-tab::before {
+      content: '○';
+      font-size: 36px;
+      opacity: 0.3;
+    }
+
+    /* ── Divider ──────────────────────────────────── */
+    .profile-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 32px 0;
+    }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 600px) {
+      .profile-card { margin: 0; border-radius: 0; border-left: none; border-right: none; }
+      .avatar-zone { padding: 0 20px; }
+      .profile-info { padding: 20px 20px 0; }
+      .stats-bar { padding: 20px 20px 0; }
+      .tab-bar { padding: 0 20px; }
+      .tab-panel { padding: 20px; }
+      .profile-divider { margin: 20px 20px 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  {% include "profiles/_sidenav.html" %}
+
+  <main class="profile-main">
+    {% if messages %}
+    <div class="toast-stack">
+      {% for msg in messages %}
+      <div class="toast toast--{{ msg.tags }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="profile-card">
+
+      <!-- Cover Banner -->
+      <div class="cover-banner"></div>
+
+      <!-- Avatar + Actions Row -->
+      <div class="avatar-zone">
+        <div class="avatar-ring">
+          {% if profile_user.profile_picture %}
+            <img src="{{ profile_user.profile_picture.url }}" class="profile-avatar" alt="{{ profile_user.username }}" />
+          {% else %}
+            <div class="profile-avatar profile-avatar--placeholder">{{ profile_user.username|first|upper }}</div>
+          {% endif %}
+        </div>
+        <div class="profile-actions">
+          {% if is_own %}
+            <a href="{% url 'profiles:edit' %}" class="btn-edit-profile">Edit Profile</a>
+          {% else %}
+            <form method="post" action="{% url 'users:follow_toggle' profile_user.username %}">
+              {% csrf_token %}
+              {% if is_following %}
+                <button type="submit" class="btn-following">Following</button>
+              {% else %}
+                <button type="submit" class="btn-follow-profile">Follow</button>
+              {% endif %}
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Profile Info -->
+      <div class="profile-info">
+        <h1 class="profile-displayname">{{ profile_user.display_name|default:profile_user.username }}</h1>
+        <span class="profile-username">@{{ profile_user.username }}</span>
+        {% if profile_user.bio %}<p class="profile-bio">{{ profile_user.bio }}</p>{% endif %}
+        <div class="profile-meta-row">
+          <span class="profile-meta-item profile-meta-item--date">Joined {{ profile_user.date_joined|date:"F Y" }}</span>
+          {% if is_own %}
+          <span class="profile-meta-item profile-meta-item--email">{{ profile_user.email }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <button class="stat-btn stat-btn--active" data-tab="followers" onclick="switchTab('followers')">
+          <span class="stat-num">{{ profile_user.followers_count }}</span>
+          <span class="stat-lbl">Followers</span>
+        </button>
+        <button class="stat-btn" data-tab="following" onclick="switchTab('following')">
+          <span class="stat-num">{{ profile_user.following_count }}</span>
+          <span class="stat-lbl">Following</span>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="profile-divider"></div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-pill tab-pill--active" data-tab="followers" onclick="switchTab('followers')">Followers</button>
+        <button class="tab-pill" data-tab="following" onclick="switchTab('following')">Following</button>
+      </div>
+
+      <!-- Followers Panel -->
+      <div class="tab-panel" id="panel-followers">
+        {% if followers %}
+        <div class="user-list">
+          {% for rel in followers %}{% with u=rel.follower %}
+          <div class="user-list-row">
+            <a href="{% url 'profiles:view' u.username %}" class="user-list-link">
+              {% if u.profile_picture %}
+                <img src="{{ u.profile_picture.url }}" class="ul-avatar" alt="{{ u.username }}" />
+              {% else %}
+                <div class="ul-avatar ul-avatar--ph">{{ u.username|first|upper }}</div>
+              {% endif %}
+              <div class="ul-info">
+                <span class="ul-name">{{ u.display_name|default:u.username }}</span>
+                <span class="ul-username">@{{ u.username }}</span>
+                {% if u.bio %}<span class="ul-bio">{{ u.bio|truncatechars:70 }}</span>{% endif %}
+              </div>
+            </a>
+            {% if u != request.user %}
+            <form method="post" action="{% url 'users:follow_toggle' u.username %}">{% csrf_token %}
+              <button type="submit" class="ul-follow-btn">Follow</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endwith %}{% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-tab">No followers yet</div>
+        {% endif %}
+      </div>
+
+      <!-- Following Panel -->
+      <div class="tab-panel" id="panel-following" style="display:none">
+        {% if following %}
+        <div class="user-list">
+          {% for rel in following %}{% with u=rel.following %}
+          <div class="user-list-row">
+            <a href="{% url 'profiles:view' u.username %}" class="user-list-link">
+              {% if u.profile_picture %}
+                <img src="{{ u.profile_picture.url }}" class="ul-avatar" alt="{{ u.username }}" />
+              {% else %}
+                <div class="ul-avatar ul-avatar--ph">{{ u.username|first|upper }}</div>
+              {% endif %}
+              <div class="ul-info">
+                <span class="ul-name">{{ u.display_name|default:u.username }}</span>
+                <span class="ul-username">@{{ u.username }}</span>
+                {% if u.bio %}<span class="ul-bio">{{ u.bio|truncatechars:70 }}</span>{% endif %}
+              </div>
+            </a>
+            {% if u != request.user %}
+            <form method="post" action="{% url 'users:follow_toggle' u.username %}">{% csrf_token %}
+              <button type="submit" class="ul-unfollow-btn">Unfollow</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endwith %}{% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-tab">Not following anyone yet</div>
+        {% endif %}
+      </div>
+
+    </div><!-- /.profile-card -->
+  </main>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[data-tab]').forEach(b => {
+    b.classList.toggle('tab-pill--active', b.dataset.tab === name);
+    b.classList.toggle('stat-btn--active', b.dataset.tab === name);
+  });
+  document.getElementById('panel-' + name).style.display = 'block';
+}
+</script>
+</body>
+</html>

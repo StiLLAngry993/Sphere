@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search · Sphere</title>
+  <link rel="stylesheet" href="/static/css/home.css" />
+  <style>
+    .search-page { padding: 40px 36px; }
+    .search-bar  { display:flex; gap:12px; margin-bottom:32px; }
+    .search-input {
+      flex:1; padding:12px 16px; background:var(--surface);
+      border:1.5px solid var(--border); border-radius:var(--radius-sm);
+      color:var(--text); font-size:15px; outline:none;
+    }
+    .search-input:focus { border-color:var(--accent); }
+    .search-input::placeholder { color:var(--muted2); }
+    .search-btn {
+      padding:12px 24px; background:var(--grad); color:#fff;
+      border:none; border-radius:var(--radius-sm); font-weight:700;
+      cursor:pointer; font-size:14px;
+    }
+    .search-results-grid { display:flex; flex-wrap:wrap; gap:14px; }
+    .search-title { font-size:18px; font-weight:700; margin-bottom:16px; color:var(--text); }
+    .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; font-size:13px; margin-bottom:24px; }
+    .back-link:hover { color:var(--text); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Sidenav -->
+  <nav class="sidenav">
+    <div class="sidenav-logo">
+      <svg viewBox="0 0 40 40" width="36" height="36" fill="none"><circle cx="20" cy="20" r="18" fill="url(#nls)"/><ellipse cx="20" cy="20" rx="7" ry="18" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none"/><ellipse cx="20" cy="20" rx="18" ry="6" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none"/><defs><linearGradient id="nls" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#6c63ff"/><stop offset="1" stop-color="#3b82f6"/></linearGradient></defs></svg>
+      <span class="logo-text">Sphere</span>
+    </div>
+    <div class="sidenav-user">
+      <div class="user-avatar-wrap">
+        {% if user.profile_picture %}<img src="{{ user.profile_picture.url }}" class="user-avatar" />
+        {% else %}<div class="user-avatar user-avatar--placeholder">{{ user.username|first|upper }}</div>{% endif %}
+        <span class="online-dot"></span>
+      </div>
+      <div class="user-meta">
+        <span class="user-displayname">{{ user.display_name|default:user.username }}</span>
+        <span class="user-username">@{{ user.username }}</span>
+      </div>
+    </div>
+    <div class="sidenav-links">
+      <a href="{% url 'users:home' %}" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="#" class="nav-item nav-item--disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Chat</span><span class="nav-badge">Soon</span>
+      </a>
+      <a href="{% url 'users:search' %}" class="nav-item nav-item--active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+      </a>
+      <a href="#" class="nav-item nav-item--disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Add Story</span><span class="nav-badge">Soon</span>
+      </a>
+    </div>
+    <div class="sidenav-bottom">
+      <a href="#" class="nav-item nav-item--disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Liked</span><span class="nav-badge">Soon</span>
+      </a>
+      <a href="{% url 'users:logout' %}" class="nav-item nav-item--logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Logout</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="feed">
+    <div class="search-page" style="padding:0">
+      <a href="{% url 'users:home' %}" class="back-link">← Back to Home</a>
+
+      <form method="get" class="search-bar">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by username or name…" class="search-input" autofocus />
+        <button type="submit" class="search-btn">Search</button>
+      </form>
+
+      {% if query %}
+        <p class="search-title">
+          {% if results %}{{ results.count }} result{{ results.count|pluralize }} for "{{ query }}"
+          {% else %}No results for "{{ query }}"{% endif %}
+        </p>
+        <div class="search-results-grid">
+          {% for u in results %}
+          <div class="person-card">
+            <a href="{% url 'profiles:view' u.username %}" class="person-avatar-wrap" title="View profile">
+              {% if u.profile_picture %}<img src="{{ u.profile_picture.url }}" class="person-avatar" />
+              {% else %}<div class="person-avatar person-avatar--placeholder">{{ u.username|first|upper }}</div>{% endif %}
+            </a>
+            <div class="person-info">
+              <a href="{% url 'profiles:view' u.username %}" style="text-decoration: none; color: inherit;">
+                <span class="person-displayname">{{ u.display_name|default:u.username }}</span>
+              </a>
+              <a href="{% url 'profiles:view' u.username %}" style="text-decoration: none; color: inherit;">
+                <span class="person-username">@{{ u.username }}</span>
+              </a>
+              {% if u.bio %}<span class="person-bio">{{ u.bio|truncatechars:60 }}</span>{% endif %}
+              <span class="person-meta">{{ u.followers_count }} follower{{ u.followers_count|pluralize }}</span>
+            </div>
+            <div class="person-actions">
+              <form method="post" action="{% url 'users:follow_toggle' u.username %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-follow">Follow</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

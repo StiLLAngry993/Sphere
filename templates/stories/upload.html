@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Story · Sphere</title>
+  <link rel="stylesheet" href="/static/css/home.css"/>
+  <link rel="stylesheet" href="/static/css/upload.css"/>
+</head>
+<body>
+<div class="upload-shell">
+
+  <!-- Back button -->
+  <a href="/users" class="upload-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+
+  <div class="upload-wrapper">
+
+    <!-- ══ STEP 1: Pick file ══ -->
+    <div class="upload-step" id="stepPick">
+      <div class="pick-card">
+        <div class="pick-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <h2>Share a Story</h2>
+        <p>Photo or video — visible to your followers for 24 hours</p>
+        <label class="pick-btn" for="mediaInput">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Choose File
+        </label>
+        <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none"/>
+        <p class="pick-hint">JPG, PNG, GIF, MP4, MOV · Max 100 MB</p>
+      </div>
+    </div>
+
+    <!-- ══ STEP 2: Editor ══ -->
+    <div class="upload-step" id="stepEdit" style="display:none">
+      <div class="editor-layout">
+
+        <!-- Preview panel -->
+        <div class="preview-panel">
+          <div class="preview-phone">
+            <!-- image preview -->
+            <img id="previewImg" src="" alt="" style="display:none"/>
+            <!-- video preview -->
+            <video id="previewVid" src="" muted playsinline style="display:none"></video>
+            <!-- caption overlay -->
+            <div class="caption-overlay" id="captionOverlay"></div>
+            <!-- progress bar (video) -->
+            <div class="vid-progress" id="vidProgress" style="display:none">
+              <div class="vid-bar" id="vidBar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls panel -->
+        <div class="controls-panel">
+          <h3 class="controls-title">Edit Story</h3>
+
+          <!-- Caption -->
+          <div class="ctrl-group">
+            <label class="ctrl-label">Caption</label>
+            <input type="text" id="captionInput" maxlength="200"
+              placeholder="Add a caption…" class="ctrl-input"
+              oninput="document.getElementById('captionOverlay').textContent=this.value"/>
+            <span class="ctrl-hint" id="captionCount">0 / 200</span>
+          </div>
+
+          <!-- Video-only controls -->
+          <div id="videoControls" style="display:none">
+
+            <!-- Trim -->
+            <div class="ctrl-group">
+              <label class="ctrl-label">Trim Video</label>
+              <div class="trim-row">
+                <span class="trim-label">Start</span>
+                <input type="range" id="trimStart" min="0" max="100" value="0" step="0.1" class="trim-range" oninput="updateTrim()"/>
+                <span class="trim-val" id="trimStartVal">0s</span>
+              </div>
+              <div class="trim-row">
+                <span class="trim-label">End</span>
+                <input type="range" id="trimEnd" min="0" max="100" value="100" step="0.1" class="trim-range" oninput="updateTrim()"/>
+                <span class="trim-val" id="trimEndVal">—</span>
+              </div>
+              <div class="trim-preview-bar">
+                <div class="trim-active" id="trimActive"></div>
+              </div>
+              <button class="ctrl-btn-sm" onclick="previewTrim()">▶ Preview Trim</button>
+            </div>
+
+            <!-- Music / Audio -->
+            <div class="ctrl-group">
+              <label class="ctrl-label">Add Music from Device</label>
+              <label class="audio-pick-btn" for="audioInput">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Choose Audio File
+              </label>
+              <input type="file" id="audioInput" accept="audio/*" style="display:none" onchange="loadAudio(this)"/>
+              <div id="audioInfo" class="audio-info" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span id="audioName"></span>
+                <button onclick="removeAudio()" class="audio-remove">✕</button>
+              </div>
+              <p class="ctrl-hint">MP3, AAC, WAV · Plays over the video</p>
+            </div>
+          </div>
+
+          <!-- Upload button -->
+          <button class="upload-btn" id="uploadBtn" onclick="submitStory()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Share Story
+          </button>
+
+          <div class="upload-progress" id="uploadProgress" style="display:none">
+            <div class="upload-progress-bar" id="uploadProgressBar"></div>
+            <span id="uploadProgressText">Uploading…</span>
+          </div>
+
+          <!-- Change file -->
+          <button class="ctrl-btn-sm ctrl-btn-ghost" onclick="resetPick()">← Choose different file</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CSRF = "{{ csrf_token }}";
+let mediaFile = null;
+let audioFile = null;
+let videoDuration = 0;
+
+// ── File picker ──────────────────────────────
+document.getElementById("mediaInput").addEventListener("change", function () {
+  const file = this.files[0];
+  if (!file) return;
+  mediaFile = file;
+
+  const url = URL.createObjectURL(file);
+  const isVideo = file.type.startsWith("video");
+
+  document.getElementById("stepPick").style.display = "none";
+  document.getElementById("stepEdit").style.display  = "block";
+
+  if (isVideo) {
+    const vid = document.getElementById("previewVid");
+    vid.src = url;
+    vid.style.display = "block";
+    document.getElementById("previewImg").style.display = "none";
+    document.getElementById("videoControls").style.display = "block";
+    document.getElementById("vidProgress").style.display  = "block";
+    vid.onloadedmetadata = () => {
+      videoDuration = vid.duration;
+      document.getElementById("trimEndVal").textContent = videoDuration.toFixed(1) + "s";
+      document.getElementById("trimStart").max = videoDuration;
+      document.getElementById("trimEnd").max   = videoDuration;
+      document.getElementById("trimEnd").value = videoDuration;
+      updateTrim();
+    };
+    // live progress bar
+    vid.ontimeupdate = () => {
+      const pct = (vid.currentTime / vid.duration) * 100;
+      document.getElementById("vidBar").style.width = pct + "%";
+    };
+  } else {
+    document.getElementById("previewImg").src = url;
+    document.getElementById("previewImg").style.display = "block";
+    document.getElementById("previewVid").style.display = "none";
+    document.getElementById("videoControls").style.display = "none";
+  }
+});
+
+// ── Caption counter ──────────────────────────
+document.getElementById("captionInput").addEventListener("input", function () {
+  document.getElementById("captionCount").textContent = this.value.length + " / 200";
+});
+
+// ── Trim ─────────────────────────────────────
+function updateTrim() {
+  const s = parseFloat(document.getElementById("trimStart").value);
+  const e = parseFloat(document.getElementById("trimEnd").value);
+  document.getElementById("trimStartVal").textContent = s.toFixed(1) + "s";
+  document.getElementById("trimEndVal").textContent   = e.toFixed(1) + "s";
+
+  const pctStart = (s / videoDuration) * 100;
+  const pctEnd   = (e / videoDuration) * 100;
+  const bar = document.getElementById("trimActive");
+  bar.style.left  = pctStart + "%";
+  bar.style.width = (pctEnd - pctStart) + "%";
+
+  // keep start < end
+  if (s >= e) {
+    document.getElementById("trimStart").value = e - 0.1;
+  }
+}
+
+function previewTrim() {
+  const vid = document.getElementById("previewVid");
+  const s   = parseFloat(document.getElementById("trimStart").value);
+  const e   = parseFloat(document.getElementById("trimEnd").value);
+  vid.currentTime = s;
+  vid.play();
+  const stop = setInterval(() => {
+    if (vid.currentTime >= e) { vid.pause(); clearInterval(stop); }
+  }, 100);
+}
+
+// ── Audio ─────────────────────────────────────
+function loadAudio(input) {
+  const file = input.files[0];
+  if (!file) return;
+  audioFile = file;
+  document.getElementById("audioInfo").style.display  = "flex";
+  document.getElementById("audioName").textContent    = file.name;
+}
+
+function removeAudio() {
+  audioFile = null;
+  document.getElementById("audioInput").value = "";
+  document.getElementById("audioInfo").style.display = "none";
+}
+
+// ── Reset to pick step ────────────────────────
+function resetPick() {
+  mediaFile = null;
+  audioFile = null;
+  document.getElementById("mediaInput").value  = "";
+  document.getElementById("audioInput").value  = "";
+  document.getElementById("previewImg").src    = "";
+  document.getElementById("previewVid").src    = "";
+  document.getElementById("captionInput").value = "";
+  document.getElementById("captionOverlay").textContent = "";
+  document.getElementById("stepPick").style.display = "block";
+  document.getElementById("stepEdit").style.display  = "none";
+}
+
+// ── Submit ────────────────────────────────────
+function submitStory() {
+  if (!mediaFile) return;
+
+  const btn      = document.getElementById("uploadBtn");
+  const progress = document.getElementById("uploadProgress");
+  const bar      = document.getElementById("uploadProgressBar");
+  const text     = document.getElementById("uploadProgressText");
+
+  btn.disabled = true;
+  btn.textContent = "Uploading…";
+  progress.style.display = "block";
+
+  const fd = new FormData();
+  fd.append("media_file",  mediaFile);
+  fd.append("caption",     document.getElementById("captionInput").value);
+  fd.append("trim_start",  document.getElementById("trimStart").value || "0");
+  fd.append("trim_end",    document.getElementById("trimEnd").value   || "0");
+  if (audioFile) fd.append("audio_file", audioFile);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/stories/save/");
+  xhr.setRequestHeader("X-CSRFToken", CSRF);
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      bar.style.width = pct + "%";
+      text.textContent = pct + "%";
+    }
+  };
+
+  xhr.onload = () => {
+    const res = JSON.parse(xhr.responseText);
+    if (res.ok) {
+      text.textContent = "Done! Redirecting…";
+      bar.style.width  = "100%";
+      setTimeout(() => { window.location.href = "/users"; }, 800);
+    } else {
+      text.textContent = "Error: " + (res.error || "Upload failed");
+      btn.disabled = false;
+    }
+  };
+
+  xhr.onerror = () => {
+    text.textContent = "Network error. Please try again.";
+    btn.disabled = false;
+  };
+
+  xhr.send(fd);
+}
+</script>
+</body>
+</html>

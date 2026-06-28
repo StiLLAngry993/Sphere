@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ author.display_name|default:author.username }}'s Story · Sphere</title>
+  <link rel="stylesheet" href="/static/css/viewer.css"/>
+</head>
+<body>
+
+<div class="viewer-shell" id="viewerShell">
+
+  <!-- Progress bars (one per story) -->
+  <div class="progress-bars" id="progressBars"></div>
+
+  <!-- Header -->
+  <div class="viewer-header">
+    <a href="{% url 'profiles:view' author.username %}" class="viewer-author">
+      {% if author.profile_picture %}
+        <img src="{{ author.profile_picture.url }}" class="viewer-pfp"/>
+      {% else %}
+        <div class="viewer-pfp viewer-pfp--ph">{{ author.username|first|upper }}</div>
+      {% endif %}
+      <div class="viewer-author-info">
+        <span class="viewer-author-name">{{ author.display_name|default:author.username }}</span>
+        <span class="viewer-story-count" id="storyCounter">1 / {{ story_count }}</span>
+      </div>
+    </a>
+    <div class="viewer-header-actions">
+      <button class="viewer-btn" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute">
+        <svg id="unmuteIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <svg id="muteIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
+      <button class="viewer-btn" id="pauseBtn" onclick="togglePause()" title="Pause/Play">
+        <svg id="pauseIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        <svg id="playIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </button>
+      {% if author.username == request.user.username %}
+      <button class="viewer-btn viewer-btn--delete" id="deleteBtn" title="Delete story" onclick="deleteCurrentStory()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+      {% endif %}
+      <a href="/users" class="viewer-btn" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Media area -->
+  <div class="viewer-media" id="viewerMedia">
+    <img id="storyImg" src="" alt="" style="display:none"/>
+    <video id="storyVid" src="" playsinline style="display:none"></video>
+    <div class="viewer-caption" id="viewerCaption"></div>
+  </div>
+
+  <!-- Tap zones: left = prev, right = next -->
+  <div class="tap-prev" onclick="prevStory()" title="Previous"></div>
+  <div class="tap-next" onclick="nextStory()" title="Next"></div>
+
+</div>
+
+<script>
+const CSRF   = "{{ csrf_token }}";
+const stories = {{ stories_json|safe }};
+let current  = 0;
+let timer    = null;
+let elapsed  = 0;
+let paused   = false;
+let muted    = false;
+const DURATION = 5000; // ms per image story
+
+// ── Build progress bars ──────────────────────
+const pbContainer = document.getElementById("progressBars");
+stories.forEach((_, i) => {
+  const wrap = document.createElement("div");
+  wrap.className = "pb-wrap";
+  const fill = document.createElement("div");
+  fill.className = "pb-fill";
+  fill.id = "pb-" + i;
+  wrap.appendChild(fill);
+  pbContainer.appendChild(wrap);
+});
+
+// ── Load a story by index ────────────────────
+function loadStory(idx) {
+  if (idx < 0 || idx >= stories.length) {
+    window.location.href = "/users";
+    return;
+  }
+  clearTimer();
+  current = idx;
+
+  const s   = stories[idx];
+  const img = document.getElementById("storyImg");
+  const vid = document.getElementById("storyVid");
+  const cap = document.getElementById("viewerCaption");
+
+  cap.textContent = s.caption || "";
+  document.getElementById("storyCounter").textContent = (idx + 1) + " / " + stories.length;
+
+  // Reset previous progress bars
+  for (let i = 0; i < idx; i++)      document.getElementById("pb-" + i).style.width = "100%";
+  document.getElementById("pb-" + idx).style.width = "0%";
+  for (let i = idx + 1; i < stories.length; i++) document.getElementById("pb-" + i).style.width = "0%";
+
+  // Mark as viewed
+  fetch("/stories/viewed/" + s.id + "/", {
+    method: "POST",
+    headers: { "X-CSRFToken": CSRF }
+  });
+
+  if (s.media_type === "video") {
+    img.style.display = "none";
+    vid.style.display = "block";
+    vid.src   = s.media_url;
+    vid.muted = muted;
+
+    const trimStart = s.trim_start || 0;
+    const trimEnd   = s.trim_end   || 0;
+
+    vid.onloadedmetadata = () => {
+      vid.currentTime = trimStart;
+      vid.play();
+
+      // Add optional audio track
+      if (s.audio_url) {
+        const audio = new Audio(s.audio_url);
+        audio.muted = muted;
+        audio.play().catch(() => {});
+        vid._extraAudio = audio;
+      }
+
+      const effectiveEnd = trimEnd > 0 ? trimEnd : vid.duration;
+      const effectiveDur = (effectiveEnd - trimStart) * 1000;
+
+      startTimer(effectiveDur, idx);
+
+      vid.ontimeupdate = () => {
+        if (trimEnd > 0 && vid.currentTime >= trimEnd) {
+          vid.pause();
+          nextStory();
+        }
+        const pct = ((vid.currentTime - trimStart) / (effectiveEnd - trimStart)) * 100;
+        document.getElementById("pb-" + idx).style.width = Math.min(pct, 100) + "%";
+      };
+    };
+  } else {
+    vid.style.display = "none";
+    vid.src = "";
+    img.src = s.media_url;
+    img.style.display = "block";
+    startTimer(DURATION, idx);
+  }
+}
+
+// ── Timer for progress bar ───────────────────
+function startTimer(duration, idx) {
+  elapsed = 0;
+  const interval = 50;
+  timer = setInterval(() => {
+    if (paused) return;
+    elapsed += interval;
+    const pct = (elapsed / duration) * 100;
+    const bar = document.getElementById("pb-" + idx);
+    if (bar) bar.style.width = Math.min(pct, 100) + "%";
+    if (elapsed >= duration) {
+      clearInterval(timer);
+      nextStory();
+    }
+  }, interval);
+}
+
+function clearTimer() {
+  if (timer) { clearInterval(timer); timer = null; }
+  // stop any playing video / audio
+  const vid = document.getElementById("storyVid");
+  vid.pause();
+  if (vid._extraAudio) { vid._extraAudio.pause(); vid._extraAudio = null; }
+}
+
+// ── Navigation ───────────────────────────────
+function nextStory() { loadStory(current + 1); }
+function prevStory() { loadStory(current - 1); }
+
+// ── Pause / Play ─────────────────────────────
+function togglePause() {
+  paused = !paused;
+  const vid = document.getElementById("storyVid");
+  if (paused) {
+    vid.pause();
+    document.getElementById("pauseIcon").style.display = "none";
+    document.getElementById("playIcon").style.display  = "block";
+  } else {
+    vid.play().catch(() => {});
+    document.getElementById("pauseIcon").style.display = "block";
+    document.getElementById("playIcon").style.display  = "none";
+  }
+}
+
+// ── Mute ─────────────────────────────────────
+function toggleMute() {
+  muted = !muted;
+  const vid = document.getElementById("storyVid");
+  vid.muted = muted;
+  if (vid._extraAudio) vid._extraAudio.muted = muted;
+  document.getElementById("muteIcon").style.display   = muted ? "block" : "none";
+  document.getElementById("unmuteIcon").style.display = muted ? "none"  : "block";
+}
+
+// ── Delete (own story) ───────────────────────
+function deleteCurrentStory() {
+  if (!confirm("Delete this story?")) return;
+  fetch("/stories/delete/" + stories[current].id + "/", {
+    method: "POST",
+    headers: { "X-CSRFToken": CSRF }
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      stories.splice(current, 1);
+      if (stories.length === 0) {
+        window.location.href = "/users";
+      } else {
+        loadStory(Math.min(current, stories.length - 1));
+      }
+    }
+  });
+}
+
+// ── Keyboard shortcuts ───────────────────────
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") nextStory();
+  if (e.key === "ArrowLeft")  prevStory();
+  if (e.key === " ")          togglePause();
+  if (e.key === "Escape")     window.location.href = "/users";
+});
+
+// ── Start ────────────────────────────────────
+loadStory(0);
+</script>
+</body>
+</html>

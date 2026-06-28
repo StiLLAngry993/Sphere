@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account · Sphere</title>
+  <link rel="stylesheet" href="/static/css/auth.css" />
+</head>
+<body>
+
+<div class="auth-split">
+
+  <!-- ── Left: Brand ── -->
+  <div class="auth-brand">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+          <circle cx="32" cy="32" r="30" fill="url(#g1)" opacity="0.9"/>
+          <ellipse cx="32" cy="32" rx="12" ry="30" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+          <ellipse cx="32" cy="32" rx="30" ry="10" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6c63ff"/>
+              <stop offset="1" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="brand-name">Sphere</h1>
+      <p class="brand-tagline">Join thousands already connecting on Sphere.</p>
+      <ul class="brand-features">
+        <li><span class="feat-icon">⚡</span> Real-time messaging</li>
+        <li><span class="feat-icon">👥</span> Group chats</li>
+        <li><span class="feat-icon">📖</span> Stories</li>
+        <li><span class="feat-icon">🎉</span> GIFs &amp; media</li>
+      </ul>
+    </div>
+    <div class="brand-glow"></div>
+    <div class="brand-dots"></div>
+  </div>
+
+  <!-- ── Right: Form ── -->
+  <div class="auth-panel">
+    <div class="auth-card">
+
+      <div class="auth-header">
+        <h2>Create your account</h2>
+        <p>Free forever · No credit card needed</p>
+      </div>
+
+      {% if messages %}
+      <div class="auth-messages">
+        {% for msg in messages %}
+        <div class="auth-alert auth-alert--{{ msg.tags }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" novalidate class="auth-form">
+        {% csrf_token %}
+
+        <!-- Row: username + display name -->
+        <div class="field-row">
+          <div class="field-group">
+            <label for="{{ form.username.id_for_label }}">
+              Username
+              <span class="field-badge">unique</span>
+            </label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <span class="field-error">{{ form.username.errors.0 }}</span>
+            {% endif %}
+          </div>
+          <div class="field-group">
+            <label for="{{ form.display_name.id_for_label }}">
+              Display Name
+              <span class="field-badge">public</span>
+            </label>
+            {{ form.display_name }}
+            {% if form.display_name.errors %}
+            <span class="field-error">{{ form.display_name.errors.0 }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="field-group">
+          <label for="{{ form.email.id_for_label }}">Email address</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+          <span class="field-error">{{ form.email.errors.0 }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Profile picture -->
+        <div class="field-group">
+          <label for="{{ form.profile_picture.id_for_label }}">Profile picture</label>
+          {{ form.profile_picture }}
+          {% if form.profile_picture.errors %}
+          <span class="field-error">{{ form.profile_picture.errors.0 }}</span>
+          {% endif %}
+          <p class="field-help">Optional: upload a JPG or PNG avatar.</p>
+        </div>
+
+        <!-- Password -->
+        <div class="field-group">
+          <label for="{{ form.password1.id_for_label }}">Password</label>
+          <div class="password-wrap">
+            {{ form.password1 }}
+            <button type="button" class="toggle-pw" onclick="togglePw(this)" tabindex="-1">
+              <svg class="eye-show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-hide" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          {% if form.password1.errors %}
+          <span class="field-error">{{ form.password1.errors.0 }}</span>
+          {% endif %}
+          <!-- Strength meter -->
+          <div class="pw-strength-track">
+            <div class="pw-strength-bar" id="pwBar"></div>
+          </div>
+          <span class="pw-strength-label" id="pwLabel"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="field-group">
+          <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+          <div class="password-wrap">
+            {{ form.password2 }}
+            <button type="button" class="toggle-pw" onclick="togglePw(this)" tabindex="-1">
+              <svg class="eye-show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-hide" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          {% if form.password2.errors %}
+          <span class="field-error">{{ form.password2.errors.0 }}</span>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="auth-btn">
+          <span>Create Account</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        Already on Sphere? <a href="{% url 'users:login' %}">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function togglePw(btn) {
+    const wrap  = btn.closest('.password-wrap');
+    const input = wrap.querySelector('input');
+    const show  = btn.querySelector('.eye-show');
+    const hide  = btn.querySelector('.eye-hide');
+    const isHidden = input.type === 'password';
+    input.type         = isHidden ? 'text' : 'password';
+    show.style.display = isHidden ? 'none'  : 'block';
+    hide.style.display = isHidden ? 'block' : 'none';
+  }
+
+  // Password strength meter
+  const pwInput = document.getElementById('id_password1');
+  const bar     = document.getElementById('pwBar');
+  const label   = document.getElementById('pwLabel');
+
+  if (pwInput) {
+    pwInput.addEventListener('input', () => {
+      const v = pwInput.value;
+      let score = 0;
+      if (v.length >= 8)              score++;
+      if (/[A-Z]/.test(v))            score++;
+      if (/[0-9]/.test(v))            score++;
+      if (/[^A-Za-z0-9]/.test(v))     score++;
+
+      const levels = [
+        { pct: '0%',    color: 'transparent', text: '' },
+        { pct: '25%',   color: '#ef4444',     text: 'Weak' },
+        { pct: '50%',   color: '#f97316',     text: 'Fair' },
+        { pct: '75%',   color: '#eab308',     text: 'Good' },
+        { pct: '100%',  color: '#22c55e',     text: 'Strong ✓' },
+      ];
+      bar.style.width      = levels[score].pct;
+      bar.style.background = levels[score].color;
+      label.textContent    = levels[score].text;
+      label.style.color    = levels[score].color;
+    });
+  }
+</script>
+
+</body>
+</html>

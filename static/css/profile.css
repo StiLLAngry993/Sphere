@@ -1,0 +1,246 @@
+:root {
+  --panel: #181c2b;
+  --panel-2: #1f2435;
+  --border: #2d3348;
+}
+
+body {
+  overflow: auto;
+}
+
+.profile-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 32px;
+  background: linear-gradient(180deg, #121520 0%, #0f1117 100%);
+}
+
+.cover-banner {
+  height: 180px;
+  background: linear-gradient(135deg, rgba(108,99,255,0.95), rgba(233,30,140,0.9));
+  position: relative;
+}
+
+.cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 40%);
+}
+
+.profile-body {
+  margin: -58px 32px 0;
+  background: rgba(24, 28, 43, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px 24px 28px;
+  box-shadow: 0 20px 44px rgba(0,0,0,0.2);
+}
+
+.avatar-actions-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.profile-avatar-wrap {
+  margin-top: -56px;
+}
+
+.profile-avatar {
+  width: 122px;
+  height: 122px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--panel);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+}
+
+.profile-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6c63ff, #3b82f6);
+  color: white;
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.profile-top-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-edit-profile,
+.btn-follow-profile,
+.btn-following,
+.ul-follow-btn,
+.ul-unfollow-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+}
+
+.btn-edit-profile,
+.btn-follow-profile {
+  background: linear-gradient(135deg, #6c63ff, #3b82f6);
+}
+
+.btn-following,
+.ul-unfollow-btn {
+  background: #2d3348;
+}
+
+.profile-info {
+  margin-bottom: 18px;
+}
+
+.profile-displayname {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.profile-username {
+  display: inline-block;
+  color: #9aa3c7;
+  margin-bottom: 10px;
+}
+
+.profile-bio {
+  color: #d7dcef;
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.profile-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  color: #8a93b5;
+  font-size: 13px;
+}
+
+.stats-bar,
+.tab-bar {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0 10px;
+}
+
+.stat-btn,
+.tab-pill {
+  background: var(--panel-2);
+  color: #e4e8f5;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stat-btn--active,
+.tab-pill--active {
+  background: rgba(108, 99, 255, 0.18);
+  color: #a79dff;
+  border-color: rgba(108, 99, 255, 0.35);
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.user-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.user-list-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}
+
+.ul-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.ul-avatar--ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6c63ff, #3b82f6);
+  color: white;
+  font-weight: 700;
+}
+
+.ul-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ul-name {
+  font-weight: 700;
+}
+
+.ul-username,
+.ul-bio {
+  color: #8a93b5;
+  font-size: 13px;
+}
+
+.empty-tab {
+  padding: 24px;
+  text-align: center;
+  color: #8a93b5;
+  background: var(--panel-2);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+
+.toast {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #1f2435;
+  color: white;
+  border: 1px solid var(--border);
+}
+
+.toast--success {
+  background: rgba(34, 197, 94, 0.16);
+  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.3);
+}

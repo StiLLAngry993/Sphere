@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home · Sphere</title>
+  <link rel="stylesheet" href="/static/css/home.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ══════ SIDENAV ══════ -->
+  <nav class="sidenav">
+    <div class="sidenav-logo">
+      <svg viewBox="0 0 40 40" width="36" height="36" fill="none">
+        <circle cx="20" cy="20" r="18" fill="url(#nl)"/>
+        <ellipse cx="20" cy="20" rx="7" ry="18" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none"/>
+        <ellipse cx="20" cy="20" rx="18" ry="6" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none"/>
+        <defs><linearGradient id="nl" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#6c63ff"/><stop offset="1" stop-color="#3b82f6"/>
+        </linearGradient></defs>
+      </svg>
+      <span class="logo-text">Sphere</span>
+    </div>
+
+    <a href="{% url 'profiles:me' %}" class="sidenav-user" title="View profile">
+      <div class="user-avatar-wrap">
+        {% if user.profile_picture %}
+          <img src="{{ user.profile_picture.url }}" alt="pfp" class="user-avatar" />
+        {% else %}
+          <div class="user-avatar user-avatar--placeholder">{{ user.username|first|upper }}</div>
+        {% endif %}
+        <span class="online-dot"></span>
+      </div>
+      <div class="user-meta">
+        <span class="user-displayname">{{ user.display_name|default:user.username }}</span>
+        <span class="user-username">@{{ user.username }}</span>
+      </div>
+      <span class="user-edit-pill">Edit</span>
+    </a>
+
+    <div class="sidenav-links">
+      <a href="{% url 'users:home' %}" class="nav-item nav-item--active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="#" class="nav-item nav-item--disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Chat</span><span class="nav-badge">Soon</span>
+      </a>
+      <a href="{% url 'users:search' %}" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Search</span>
+      </a>
+      <!-- Add Story → goes to upload page -->
+      <a href="{% url 'stories:upload' %}" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Add Story</span>
+      </a>
+    </div>
+
+    <div class="sidenav-bottom">
+      <a href="#" class="nav-item nav-item--disabled">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Liked</span><span class="nav-badge">Soon</span>
+      </a>
+      <a href="{% url 'users:logout' %}" class="nav-item nav-item--logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Logout</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ══════ MAIN FEED ══════ -->
+  <main class="feed">
+
+    <!-- ── STORIES ROW ── -->
+    <section class="stories-row">
+      <div class="stories-header">
+        <h3>Stories</h3>
+        {% if story_authors %}<span class="stories-live-badge">● Live</span>{% endif %}
+      </div>
+      <div class="stories-list">
+
+        <!-- Your own slot — always first -->
+        {% url 'stories:upload' as upload_url %}
+        {% if story_authors and story_authors.0.is_self %}
+          {# user already has a story — show it with ring, click to view #}
+          <a href="{% url 'stories:viewer' user.username %}" class="story-bubble" title="Your story">
+            <div class="story-ring {% if story_authors.0.has_unseen %}story-ring--unseen{% else %}story-ring--seen{% endif %}">
+              <div class="story-avatar-inner">
+                {% if user.profile_picture %}
+                  <img src="{{ user.profile_picture.url }}" class="story-pfp" />
+                {% else %}
+                  <div class="story-pfp-placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <span class="story-name">You</span>
+          </a>
+        {% else %}
+          {# no story yet — show add button #}
+          <a href="{{ upload_url }}" class="story-bubble story-bubble--add" title="Add story">
+            <div class="story-ring story-ring--add">
+              <div class="story-avatar-inner story-add-inner">
+                {% if user.profile_picture %}
+                  <img src="{{ user.profile_picture.url }}" class="story-pfp" />
+                {% else %}
+                  <div class="story-pfp-placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+                <div class="story-add-plus">+</div>
+              </div>
+            </div>
+            <span class="story-name">Add Story</span>
+          </a>
+        {% endif %}
+
+        <!-- Stories from people you follow -->
+        {% for entry in story_authors %}
+          {% if not entry.is_self %}
+          <a href="{% url 'stories:viewer' entry.user.username %}" class="story-bubble" title="{{ entry.user.display_name|default:entry.user.username }}'s story">
+            <div class="story-ring {% if entry.has_unseen %}story-ring--unseen{% else %}story-ring--seen{% endif %}">
+              <div class="story-avatar-inner">
+                {% if entry.user.profile_picture %}
+                  <img src="{{ entry.user.profile_picture.url }}" class="story-pfp" />
+                {% else %}
+                  <div class="story-pfp-placeholder">{{ entry.user.username|first|upper }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <span class="story-name">{{ entry.user.display_name|default:entry.user.username|truncatechars:10 }}</span>
+          </a>
+          {% endif %}
+        {% endfor %}
+
+      </div>
+    </section>
+
+    <!-- ── FOLLOWING ── -->
+    <section class="people-section">
+      <div class="section-header">
+        <h2>Following</h2>
+        <span class="section-count">{{ following_users.count }}</span>
+      </div>
+      {% if following_users %}
+      <div class="people-scroll-wrap">
+        <div class="people-grid">
+          {% for u in following_users %}
+          <div class="person-card">
+            <a href="{% url 'profiles:view' u.username %}" class="person-avatar-wrap">
+              {% if u.profile_picture %}
+                <img src="{{ u.profile_picture.url }}" class="person-avatar" alt="{{ u.username }}" />
+              {% else %}
+                <div class="person-avatar person-avatar--placeholder">{{ u.username|first|upper }}</div>
+              {% endif %}
+              <span class="person-online"></span>
+            </a>
+            <div class="person-info">
+              <a href="{% url 'profiles:view' u.username %}" class="person-name-link">
+                <span class="person-displayname">{{ u.display_name|default:u.username }}</span>
+              </a>
+              <span class="person-username">@{{ u.username }}</span>
+              {% if u.bio %}<span class="person-bio">{{ u.bio|truncatechars:50 }}</span>{% endif %}
+            </div>
+            <div class="person-actions">
+              <form method="post" action="{% url 'users:follow_toggle' u.username %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-unfollow">Unfollow</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <p>You're not following anyone yet.<br/>Check out the suggestions below!</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ── SUGGESTIONS ── -->
+    <section class="people-section">
+      <div class="section-header">
+        <h2>Suggested for you</h2>
+        <a href="{% url 'users:search' %}" class="section-link">Search more →</a>
+      </div>
+      {% if suggestions %}
+      <div class="people-scroll-wrap">
+        <div class="people-grid">
+          {% for u in suggestions %}
+          <div class="person-card person-card--suggestion">
+            <a href="{% url 'profiles:view' u.username %}" class="person-avatar-wrap">
+              {% if u.profile_picture %}
+                <img src="{{ u.profile_picture.url }}" class="person-avatar" alt="{{ u.username }}" />
+              {% else %}
+                <div class="person-avatar person-avatar--placeholder">{{ u.username|first|upper }}</div>
+              {% endif %}
+            </a>
+            <div class="person-info">
+              <a href="{% url 'profiles:view' u.username %}" class="person-name-link">
+                <span class="person-displayname">{{ u.display_name|default:u.username }}</span>
+              </a>
+              <span class="person-username">@{{ u.username }}</span>
+              {% if u.bio %}<span class="person-bio">{{ u.bio|truncatechars:50 }}</span>{% endif %}
+              <span class="person-meta">{{ u.followers_count }} follower{{ u.followers_count|pluralize }}</span>
+            </div>
+            <div class="person-actions">
+              <form method="post" action="{% url 'users:follow_toggle' u.username %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-follow">Follow</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+        <p>No suggestions right now.<br/>Invite friends to join Sphere!</p>
+      </div>
+      {% endif %}
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
