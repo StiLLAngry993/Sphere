@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     "users",
     "profiles",
     "stories",
+    "chats",
 ]
 
 MIDDLEWARE = [
@@ -76,11 +77,11 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL  = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Max upload size: 100MB (for videos)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-# SECURITY WARNING: keep the secret key used in production secret!
+
+
 
 

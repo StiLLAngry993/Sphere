@@ -25,5 +25,6 @@ urlpatterns = [
     path("users/",    include("users.urls")),
     path("profile/",  include("profiles.urls")),
     path("stories/",  include("stories.urls")),
+    path("chats/",    include("chats.urls")),
     path("",          lambda req: redirect("users:login"), name="root"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

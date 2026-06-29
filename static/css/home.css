@@ -701,3 +701,21 @@ html, body {
   cursor: pointer;
 }
 .sidenav-user:hover { background: var(--surface3); }
+
+/* Message button on person cards */
+.btn-message {
+  display: block;
+  width: 100%;
+  padding: 7px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-align: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-message:hover { border-color: var(--accent); color: var(--accent); }

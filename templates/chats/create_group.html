@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Group · Sphere</title>
+  <link rel="stylesheet" href="/static/css/home.css"/>
+  <link rel="stylesheet" href="/static/css/chat.css"/>
+</head>
+<body>
+<div class="app-shell">
+  {% include "profiles/_sidenav.html" %}
+  <main class="chat-main" style="align-items:center; justify-content:center;">
+    <div class="create-group-card">
+      <div class="cg-header">
+        <a href="{% url 'chats:inbox' %}" class="cg-back">← Back</a>
+        <h2>New Group Chat</h2>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="cg-form">
+        {% csrf_token %}
+        <div class="cg-field">
+          <label class="cg-label">Group Name</label>
+          <input type="text" name="group_name" class="cg-input" placeholder="e.g. Weekend Squad" required maxlength="100"/>
+        </div>
+        <div class="cg-field">
+          <label class="cg-label">Group Image <span class="cg-opt">(optional)</span></label>
+          <input type="file" name="group_image" accept="image/*" class="cg-input-file"/>
+        </div>
+        <div class="cg-field">
+          <label class="cg-label">Add Members</label>
+          <div class="cg-member-list">
+            {% for u in following %}
+            <label class="cg-member-item">
+              <input type="checkbox" name="members" value="{{ u.pk }}" class="cg-checkbox"/>
+              <div class="cg-member-info">
+                {% if u.profile_picture %}
+                  <img src="{{ u.profile_picture.url }}" class="cg-member-avatar"/>
+                {% else %}
+                  <div class="cg-member-avatar cg-member-avatar--ph">{{ u.username|first|upper }}</div>
+                {% endif %}
+                <span class="cg-member-name">{{ u.display_name|default:u.username }}</span>
+                <span class="cg-member-username">@{{ u.username }}</span>
+              </div>
+            </label>
+            {% empty %}
+            <p class="cg-empty">Follow people first to add them to groups.</p>
+            {% endfor %}
+          </div>
+        </div>
+        <button type="submit" class="cg-submit">Create Group</button>
+      </form>
+    </div>
+  </main>
+</div>
+</body>
+</html>

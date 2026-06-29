@@ -1,14 +1,12 @@
 <nav class="sidenav">
   <div class="sidenav-logo">
-    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="url(#nl)"/>
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none">
+      <circle cx="20" cy="20" r="18" fill="url(#nlc)"/>
       <ellipse cx="20" cy="20" rx="7" ry="18" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none"/>
       <ellipse cx="20" cy="20" rx="18" ry="6" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none"/>
-      <defs>
-        <linearGradient id="nl" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#6c63ff"/><stop offset="1" stop-color="#3b82f6"/>
-        </linearGradient>
-      </defs>
+      <defs><linearGradient id="nlc" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#6c63ff"/><stop offset="1" stop-color="#3b82f6"/>
+      </linearGradient></defs>
     </svg>
     <span class="logo-text">Sphere</span>
   </div>
@@ -16,7 +14,7 @@
   <a href="{% url 'profiles:me' %}" class="sidenav-user" title="View profile">
     <div class="user-avatar-wrap">
       {% if user.profile_picture %}
-        <img src="{{ user.profile_picture.url }}" alt="pfp" class="user-avatar" />
+        <img src="{{ user.profile_picture.url }}" class="user-avatar"/>
       {% else %}
         <div class="user-avatar user-avatar--placeholder">{{ user.username|first|upper }}</div>
       {% endif %}
@@ -26,41 +24,35 @@
       <span class="user-displayname">{{ user.display_name|default:user.username }}</span>
       <span class="user-username">@{{ user.username }}</span>
     </div>
-    <span class="user-edit-pill">Profile</span>
+    <span class="user-edit-pill">Edit</span>
   </a>
 
   <div class="sidenav-links">
-    <a href="{% url 'users:home' %}" class="nav-item" title="Home">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
+    <a href="{% url 'users:home' %}" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span>Home</span>
     </a>
-
-    <a href="{% url 'profiles:me' %}" class="nav-item nav-item--active" title="Profile">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-      <span>Profile</span>
+    <a href="{% url 'chats:inbox' %}" class="nav-item nav-item--active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Chat</span>
     </a>
-
-    <a href="{% url 'users:search' %}" class="nav-item" title="Search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
+    <a href="{% url 'users:search' %}" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <span>Search</span>
+    </a>
+    <a href="{% url 'stories:upload' %}" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>Add Story</span>
     </a>
   </div>
 
   <div class="sidenav-bottom">
-    <a href="{% url 'users:logout' %}" class="nav-item nav-item--logout" title="Logout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" y1="12" x2="9" y2="12"/>
-      </svg>
+    <a href="#" class="nav-item nav-item--disabled">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Liked</span><span class="nav-badge">Soon</span>
+    </a>
+    <a href="{% url 'users:logout' %}" class="nav-item nav-item--logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       <span>Logout</span>
     </a>
   </div>
