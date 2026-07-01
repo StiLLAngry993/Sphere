@@ -50,6 +50,29 @@ def mark_messages_read(conversation, user):
     ReadReceipt.objects.bulk_create(receipts, ignore_conflicts=True)
 
 
+def build_conversation_summaries(user):
+    memberships = (
+        ConversationMember.objects
+        .filter(user=user)
+        .select_related("conversation")
+        .order_by("-conversation__updated_at")
+    )
+
+    conversations = []
+    for membership in memberships:
+        conv = membership.conversation
+        last = conv.last_message()
+        other = conv.get_other_member(user) if not conv.is_group else None
+        conversations.append({
+            "conv": conv,
+            "last_msg": last,
+            "other": other,
+            "unread": conv.unread_count(user),
+            "is_muted": membership.is_muted,
+        })
+    return conversations
+
+
 # ── Phase 4: Conversation list ─────────────────────────────
 
 @login_required
@@ -58,28 +81,11 @@ def inbox(request):
     Show all conversations the current user is part of,
     ordered by most recent activity.
     """
-    memberships = (
-        ConversationMember.objects
-        .filter(user=request.user)
-        .select_related("conversation")
-        .order_by("-conversation__updated_at")
-    )
+    conversations = build_conversation_summaries(request.user)
 
-    conversations = []
-    for m in memberships:
-        conv = m.conversation
-        last = conv.last_message()
-        other = conv.get_other_member(request.user) if not conv.is_group else None
-        conversations.append({
-            "conv":        conv,
-            "last_msg":    last,
-            "other":       other,
-            "unread":      conv.unread_count(request.user),
-            "is_muted":    m.is_muted,
-        })
-
-    return render(request, "chats/inbox.html", {
+    return render(request, "chats/chat_layout.html", {
         "conversations": conversations,
+        "conv": None,
     })
 
 
@@ -181,7 +187,8 @@ def room(request, pk):
     other = conv.get_other_member(request.user) if not conv.is_group else None
     members = conv.members.select_related("user").all()
 
-    return render(request, "chats/room.html", {
+    return render(request, "chats/chat_layout.html", {
+        "conversations": build_conversation_summaries(request.user),
         "conv":       conv,
         "messages":   messages_qs,
         "other":      other,

@@ -1,0 +1,180 @@
+{% if conv %}
+<div class="room-area">
+  <div class="room-header">
+    <a href="{% url 'chats:inbox' %}" class="room-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+
+    {% if conv.is_group %}
+      {% if conv.group_image %}
+        <img src="{{ conv.group_image.url }}" class="room-header-avatar"/>
+      {% else %}
+        <div class="room-header-avatar room-header-avatar--ph">{{ conv.group_name|first|upper }}</div>
+      {% endif %}
+      <div class="room-header-info">
+        <span class="room-header-name">{{ conv.group_name }}</span>
+        <span class="room-header-sub">{{ members.count }} members</span>
+      </div>
+    {% elif other %}
+      {% if other.user.profile_picture %}
+        <img src="{{ other.user.profile_picture.url }}" class="room-header-avatar"/>
+      {% else %}
+        <div class="room-header-avatar room-header-avatar--ph">{{ other.user.username|first|upper }}</div>
+      {% endif %}
+      <div class="room-header-info">
+        <a href="{% url 'profiles:view' other.user.username %}" class="room-header-name">
+          {{ other.user.display_name|default:other.user.username }}
+        </a>
+        <span class="room-header-sub">@{{ other.user.username }}</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="messages-area" id="messagesArea">
+    {% for msg in messages %}
+    <div class="msg-row {% if msg.sender == request.user %}msg-row--own{% else %}msg-row--other{% endif %}"
+         id="msg-{{ msg.pk }}" data-id="{{ msg.pk }}">
+
+      {% if msg.sender != request.user %}
+      <a href="{% url 'profiles:view' msg.sender.username %}">
+        {% if msg.sender.profile_picture %}
+          <img src="{{ msg.sender.profile_picture.url }}" class="msg-avatar"/>
+        {% else %}
+          <div class="msg-avatar msg-avatar--ph">{{ msg.sender.username|first|upper }}</div>
+        {% endif %}
+      </a>
+      {% endif %}
+
+      <div class="msg-content-wrap">
+        {% if msg.sender != request.user and conv.is_group %}
+        <span class="msg-sender-name">{{ msg.sender.display_name|default:msg.sender.username }}</span>
+        {% endif %}
+
+        {% if msg.reply_to %}
+        <div class="msg-reply-preview">
+          <span class="msg-reply-author">{{ msg.reply_to.sender.username }}</span>
+          <span class="msg-reply-text">{{ msg.reply_to.text|truncatechars:60 }}</span>
+        </div>
+        {% endif %}
+
+        <div class="msg-bubble">
+          {% if msg.text %}<p class="msg-text">{{ msg.text }}</p>{% endif %}
+
+          {% for att in msg.attachments.all %}
+            {% if att.file_type == "image" %}
+              <img src="{{ att.url }}" class="msg-img" onclick="openImg(this.src)"/>
+            {% elif att.file_type == "gif" %}
+              <img src="{{ att.url }}" class="msg-gif" alt="GIF"/>
+            {% elif att.file_type == "video" %}
+              <video src="{{ att.url }}" class="msg-video" controls></video>
+            {% elif att.file_type == "audio" or att.file_type == "voice" %}
+              <audio src="{{ att.url }}" controls class="msg-audio"></audio>
+            {% else %}
+              <a href="{{ att.url }}" class="msg-file" download="{{ att.file_name }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                {{ att.file_name|default:"Download file" }}
+              </a>
+            {% endif %}
+          {% endfor %}
+
+          <div class="msg-meta">
+            <span class="msg-time">{{ msg.created_at|date:"H:i" }}</span>
+            {% if msg.edited %}<span class="msg-edited">edited</span>{% endif %}
+          </div>
+        </div>
+
+        {% if msg.reactions.all %}
+        <div class="msg-reactions">
+          {% regroup msg.reactions.all by emoji as reaction_groups %}
+          {% for grp in reaction_groups %}
+          <span class="reaction-pill" title="{{ grp.list|length }} people">
+            {{ grp.grouper }} {{ grp.list|length }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="msg-actions" id="actions-{{ msg.pk }}">
+          <div class="emoji-picker-wrap">
+            <button class="msg-action-btn" onclick="toggleEmojiPicker({{ msg.pk }})">😊</button>
+            <div class="emoji-picker" id="emojis-{{ msg.pk }}" style="display:none">
+              {% for emoji in "❤️ 😂 😮 😢 😡 👍" %}
+              <button class="emoji-btn" onclick="sendReact({{ msg.pk }}, '{{ emoji }}')">{{ emoji }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          <button class="msg-action-btn" onclick="setReply({{ msg.pk }}, '{{ msg.sender.username }}', '{{ msg.text|truncatechars:40|escapejs }}')" title="Reply">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+          </button>
+          {% if msg.sender == request.user %}
+          <button class="msg-action-btn" onclick="startEdit({{ msg.pk }}, '{{ msg.text|escapejs }}')" title="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="msg-action-btn msg-action-btn--danger" onclick="deleteMsg({{ msg.pk }})" title="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="messages-empty">
+      <p>No messages yet. Say hello! 👋</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="reply-bar" id="replyBar" style="display:none">
+    <div class="reply-bar-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+      <span class="reply-bar-author" id="replyAuthor"></span>
+      <span class="reply-bar-text" id="replyText"></span>
+    </div>
+    <button class="reply-bar-close" onclick="clearReply()">✕</button>
+  </div>
+
+  <div class="gif-picker" id="gifPicker" style="display:none">
+    <div class="gif-picker-header">
+      <input type="text" id="gifSearch" placeholder="Search GIFs…" class="gif-search-input" oninput="searchGifs(this.value)"/>
+      <button onclick="closeGifPicker()" class="gif-close-btn">✕</button>
+    </div>
+    <div class="gif-grid" id="gifGrid">
+      <p class="gif-hint">Type to search GIFs</p>
+    </div>
+  </div>
+
+  <form class="input-bar" id="msgForm" method="post" enctype="multipart/form-data" action="{% url 'chats:room' conv.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="reply_to" id="replyToInput"/>
+
+    <label class="input-icon-btn" for="fileInput" title="Attach file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </label>
+    <input type="file" id="fileInput" name="files" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx" style="display:none" onchange="showFilePreview(this)"/>
+
+    <button type="button" class="input-icon-btn" onclick="toggleGifPicker()" title="GIF">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h4"/><path d="M8 9v6"/><path d="M16 9v3h-4"/></svg>
+    </button>
+
+    <input type="text" name="text" id="msgInput" placeholder="Type a message…" class="msg-input" autocomplete="off"/>
+
+    <button type="submit" class="send-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </form>
+
+  <div class="file-preview-strip" id="filePreview" style="display:none"></div>
+</div>
+{% else %}
+<div class="room-placeholder">
+  <div class="placeholder-content">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" width="72" height="72"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <h2>Your Messages</h2>
+    <p>Pick a conversation from the left<br/>or start a new one.</p>
+    <a href="{% url 'users:search' %}" class="placeholder-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Find People
+    </a>
+  </div>
+</div>
+{% endif %}

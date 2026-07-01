@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>
+    {% if conv and conv.is_group %}{{ conv.group_name }}{% elif conv and other %}{{ other.user.display_name|default:other.user.username }}{% elif conv %}Conversation{% else %}Inbox{% endif %} · Sphere
+  </title>
+  <link rel="stylesheet" href="/static/css/home.css"/>
+  <link rel="stylesheet" href="/static/css/chat.css"/>
+</head>
+<body>
+<div class="app-shell">
+  {% include "profiles/_sidenav.html" %}
+
+  <main class="chat-main">
+    <div class="inbox-layout">
+      {% include "chats/_conversation_sidebar.html" %}
+      {% include "chats/_room.html" %}
+    </div>
+  </main>
+</div>
+
+{% if conv %}
+<div class="lightbox" id="lightbox" onclick="closeLightbox()" style="display:none">
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+{% endif %}
+
+<script>
+const CSRF = "{{ csrf_token }}";
+const CONV_PK = {{ conv.pk|default:"null" }};
+const GIPHY_KEY = "";
+
+window.addEventListener("load", () => {
+  const area = document.getElementById("messagesArea");
+  if (area) {
+    area.scrollTop = area.scrollHeight;
+  }
+});
+
+function filterConvs(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.conv-item').forEach(el => {
+    const name = (el.dataset.name || '').toLowerCase();
+    el.style.display = name.includes(q) ? 'flex' : 'none';
+  });
+}
+
+let replyId = null;
+
+function setReply(id, author, text) {
+  replyId = id;
+  document.getElementById("replyToInput").value = id;
+  document.getElementById("replyAuthor").textContent = author;
+  document.getElementById("replyText").textContent   = text;
+  document.getElementById("replyBar").style.display  = "flex";
+  document.getElementById("msgInput").focus();
+}
+
+function clearReply() {
+  replyId = null;
+  document.getElementById("replyToInput").value = "";
+  document.getElementById("replyBar").style.display = "none";
+}
+
+function toggleEmojiPicker(id) {
+  const el = document.getElementById("emojis-" + id);
+  el.style.display = el.style.display === "none" ? "flex" : "none";
+}
+
+function sendReact(msgId, emoji) {
+  document.getElementById("emojis-" + msgId).style.display = "none";
+  fetch(`/chats/react/${msgId}/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": CSRF, "Content-Type": "application/x-www-form-urlencoded" },
+    body: `emoji=${encodeURIComponent(emoji)}`
+  }).then(() => location.reload());
+}
+
+function startEdit(msgId, currentText) {
+  const newText = prompt("Edit message:", currentText);
+  if (!newText || newText === currentText) return;
+  fetch(`/chats/edit/${msgId}/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": CSRF, "Content-Type": "application/x-www-form-urlencoded" },
+    body: `text=${encodeURIComponent(newText)}`
+  }).then(() => location.reload());
+}
+
+function deleteMsg(msgId) {
+  if (!confirm("Delete this message?")) return;
+  fetch(`/chats/delete/${msgId}/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": CSRF }
+  }).then(() => {
+    const el = document.getElementById("msg-" + msgId);
+    if (el) el.remove();
+  });
+}
+
+function showFilePreview(input) {
+  const strip = document.getElementById("filePreview");
+  strip.innerHTML = "";
+  if (!input.files.length) { strip.style.display = "none"; return; }
+  strip.style.display = "flex";
+  Array.from(input.files).forEach(f => {
+    const chip = document.createElement("div");
+    chip.className = "file-chip";
+    chip.textContent = f.name;
+    strip.appendChild(chip);
+  });
+}
+
+let gifTimeout = null;
+
+function toggleGifPicker() {
+  const p = document.getElementById("gifPicker");
+  p.style.display = p.style.display === "none" ? "flex" : "none";
+  if (p.style.display === "flex") {
+    loadTrendingGifs();
+    document.getElementById("gifSearch").focus();
+  }
+}
+
+function closeGifPicker() {
+  document.getElementById("gifPicker").style.display = "none";
+}
+
+function searchGifs(q) {
+  clearTimeout(gifTimeout);
+  gifTimeout = setTimeout(() => {
+    if (!q.trim()) { loadTrendingGifs(); return; }
+    fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(q)}&limit=20&rating=pg-13`)
+      .then(r => r.json()).then(renderGifs);
+  }, 400);
+}
+
+function loadTrendingGifs() {
+  if (!GIPHY_KEY) {
+    document.getElementById("gifGrid").innerHTML = '<p class="gif-hint">Add your Giphy API key to enable GIFs.</p>';
+    return;
+  }
+  fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=20&rating=pg-13`)
+    .then(r => r.json()).then(renderGifs);
+}
+
+function renderGifs(data) {
+  const grid = document.getElementById("gifGrid");
+  if (!data.data || !data.data.length) {
+    grid.innerHTML = '<p class="gif-hint">No GIFs found.</p>'; return;
+  }
+  grid.innerHTML = "";
+  data.data.forEach(gif => {
+    const img = document.createElement("img");
+    img.src = gif.images.fixed_height_small.url;
+    img.className = "gif-thumb";
+    img.onclick = () => sendGif(gif.images.original.url, gif.id);
+    grid.appendChild(img);
+  });
+}
+
+function sendGif(url, id) {
+  closeGifPicker();
+  fetch(`/chats/gif/${CONV_PK}/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": CSRF, "Content-Type": "application/x-www-form-urlencoded" },
+    body: `gif_url=${encodeURIComponent(url)}&gif_id=${encodeURIComponent(id)}`
+  }).then(() => location.reload());
+}
+
+function openImg(src) {
+  document.getElementById("lightboxImg").src = src;
+  document.getElementById("lightbox").style.display = "flex";
+}
+function closeLightbox() {
+  document.getElementById("lightbox").style.display = "none";
+}
+
+const msgInput = document.getElementById("msgInput");
+if (msgInput) {
+  msgInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById("msgForm").submit();
+    }
+  });
+}
+</script>
+</body>
+</html>
