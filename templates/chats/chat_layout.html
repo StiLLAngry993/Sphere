@@ -31,14 +31,104 @@
 const CSRF = "{{ csrf_token }}";
 const CONV_PK = {{ conv.pk|default:"null" }};
 const GIPHY_KEY = "";
+const CHAT_WS_URL = "{{ ws_url|default:'__SPHERE_CHAT_WS_URL__' }}";
+const CURRENT_USER_ID = {{ request.user.id|default:"null" }};
+const CURRENT_USERNAME = "{{ request.user.username|default:''|escapejs }}";
+let chatSocket = null;
 
 window.addEventListener("load", () => {
   const area = document.getElementById("messagesArea");
   if (area) {
     area.scrollTop = area.scrollHeight;
   }
+  if (CONV_PK) {
+    connectChatSocket();
+  }
 });
 
+function connectChatSocket() {
+  if (!CONV_PK || !CHAT_WS_URL || CHAT_WS_URL.includes("__SPHERE_CHAT_WS_URL__")) {
+    return;
+  }
+  if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+
+  chatSocket = new WebSocket(CHAT_WS_URL);
+  chatSocket.addEventListener("message", (event) => {
+    const payload = JSON.parse(event.data);
+    appendLiveMessage(payload);
+  });
+  chatSocket.addEventListener("close", () => {
+    chatSocket = null;
+  });
+}
+
+function appendLiveMessage(payload) {
+  const area = document.getElementById("messagesArea");
+  if (!area) return;
+
+  const emptyState = area.querySelector(".messages-empty");
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+  const row = document.createElement("div");
+  row.className = `msg-row ${payload.sender_id === CURRENT_USER_ID ? "msg-row--own" : "msg-row--other"}`;
+  row.id = `msg-${payload.message_id}`;
+  row.dataset.id = payload.message_id;
+
+  const senderName =
+    payload.sender_display_name ||
+    payload.sender_username ||
+    CURRENT_USERNAME;
+
+  const timeLabel = payload.created_at
+    ? new Date(payload.created_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "now";
+
+  let avatarHTML = "";
+
+  if (payload.sender_id !== CURRENT_USER_ID) {
+    if (payload.sender_profile_picture) {
+      avatarHTML = `
+        <a href="/profile/${payload.sender_username}/">
+          <img
+            class="msg-avatar"
+            src="${payload.sender_profile_picture}"
+            alt="${senderName}"
+          >
+        </a>
+      `;
+    } else {
+      avatarHTML = `
+        <a href="/profile/${payload.sender_username}/">
+          <div class="msg-avatar msg-avatar--ph">
+            ${(senderName || "?").charAt(0).toUpperCase()}
+          </div>
+        </a>
+      `;
+    }
+  }
+
+  row.innerHTML = `
+    ${avatarHTML}
+    <div class="msg-content-wrap">
+      <div class="msg-bubble">
+        <p class="msg-text">${payload.message}</p>
+        <div class="msg-meta">
+          <span class="msg-time">${timeLabel}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
 function filterConvs(q) {
   q = q.toLowerCase();
   document.querySelectorAll('.conv-item').forEach(el => {
@@ -178,11 +268,25 @@ function closeLightbox() {
 }
 
 const msgInput = document.getElementById("msgInput");
-if (msgInput) {
+const msgForm = document.getElementById("msgForm");
+if (msgForm && msgInput) {
+  msgForm.addEventListener("submit", (event) => {
+    const hasFiles = document.getElementById("fileInput")?.files?.length;
+    const text = msgInput.value.trim();
+
+    if (!hasFiles && text && CONV_PK && CHAT_WS_URL && !CHAT_WS_URL.includes("__SPHERE_CHAT_WS_URL__") && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+      event.preventDefault();
+      chatSocket.send(JSON.stringify({ message: text }));
+      msgInput.value = "";
+      clearReply();
+      return;
+    }
+  });
+
   msgInput.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      document.getElementById("msgForm").submit();
+      msgForm.requestSubmit();
     }
   });
 }

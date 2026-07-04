@@ -187,6 +187,12 @@ def room(request, pk):
     other = conv.get_other_member(request.user) if not conv.is_group else None
     members = conv.members.select_related("user").all()
 
+    ws_url = (
+        request.build_absolute_uri(f"/ws/chat/{conv.pk}/")
+        .replace("http://", "ws://")
+        .replace("https://", "wss://")
+    )
+
     return render(request, "chats/chat_layout.html", {
         "conversations": build_conversation_summaries(request.user),
         "conv":       conv,
@@ -194,6 +200,7 @@ def room(request, pk):
         "other":      other,
         "members":    members,
         "membership": membership,
+        "ws_url":     ws_url,
     })
 
 
