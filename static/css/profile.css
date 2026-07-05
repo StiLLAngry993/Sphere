@@ -1,40 +1,67 @@
-:root {
-  --panel: #181c2b;
-  --panel-2: #1f2435;
-  --border: #2d3348;
-}
+/* ═════════════════════════════════════════════════════════════════
+   PROFILE — the centerpiece of the corkboard. A polaroid pinned
+   over a strip of board, with an index card underneath holding
+   everything else: bio, stats, and a stack of pinned mini-cards
+   for followers/following.
+═════════════════════════════════════════════════════════════════ */
 
-body {
-  overflow: auto;
-}
+body { overflow: auto; }
 
 .profile-main {
   flex: 1;
   overflow-y: auto;
-  padding: 0 0 32px;
-  background: linear-gradient(180deg, #121520 0%, #0f1117 100%);
+  padding: 0 0 40px;
+  background: var(--bg);
+  background-image: radial-gradient(circle, rgba(74,63,48,0.04) 1px, transparent 1px);
+  background-size: 16px 16px;
 }
 
+/* ── Cover — a strip of corkboard, not a gradient banner ─── */
 .cover-banner {
-  height: 180px;
-  background: linear-gradient(135deg, rgba(108,99,255,0.95), rgba(233,30,140,0.9));
+  height: 190px;
+  background: var(--board);
+  background-image:
+    radial-gradient(circle, rgba(74,63,48,0.09) 1.5px, transparent 1.5px);
+  background-size: 13px 13px;
   position: relative;
+  border-bottom: 3px solid var(--border);
 }
 
+/* soft warm wash instead of a hard gradient overlay */
 .cover-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 40%);
+  background:
+    radial-gradient(ellipse at top right, rgba(214,130,86,0.14), transparent 55%),
+    radial-gradient(ellipse at bottom left, rgba(111,154,124,0.10), transparent 55%);
 }
 
+/* ── Profile body — the big index card ───────────────────── */
 .profile-body {
   margin: -58px 32px 0;
-  background: rgba(24, 28, 43, 0.94);
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 24px 24px 28px;
-  box-shadow: 0 20px 44px rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 24px 26px 30px;
+  box-shadow: 4px 8px 20px rgba(74,63,48,0.16);
+  position: relative;
+  transform: rotate(-0.3deg);
 }
+
+/* tape holding the top corners of the card to the board */
+.profile-body::before,
+.profile-body::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  width: 50px;
+  height: 22px;
+  opacity: 0.9;
+  box-shadow: 0 1px 3px rgba(74,63,48,0.22);
+  z-index: 3;
+}
+.profile-body::before { left: 40px; background: var(--tape2); transform: rotate(-6deg); }
+.profile-body::after  { right: 40px; background: var(--tape); transform: rotate(5deg); }
 
 .avatar-actions-row {
   display: flex;
@@ -44,26 +71,52 @@ body {
   margin-bottom: 18px;
 }
 
+/* ── Avatar — a polaroid photo, taped and tilted ─────────── */
 .profile-avatar-wrap {
-  margin-top: -56px;
+  margin-top: -70px;
+  position: relative;
+  padding: 10px 10px 26px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 3px 6px 14px rgba(74,63,48,0.22);
+  transform: rotate(-3deg);
+  z-index: 2;
+}
+
+.profile-avatar-wrap::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  width: 44px;
+  height: 20px;
+  background: var(--tape);
+  opacity: 0.9;
+  box-shadow: 0 1px 3px rgba(74,63,48,0.22);
 }
 
 .profile-avatar {
   width: 122px;
   height: 122px;
-  border-radius: 50%;
+  border-radius: 2px;
   object-fit: cover;
-  border: 4px solid var(--panel);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+  border: none;
+  box-shadow: none;
+  display: block;
 }
 
 .profile-avatar--placeholder {
+  width: 122px;
+  height: 122px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6c63ff, #3b82f6);
-  color: white;
-  font-size: 42px;
+  background: var(--accent);
+  color: var(--card);
+  font-family: var(--font-title);
+  font-size: 46px;
   font-weight: 700;
 }
 
@@ -72,6 +125,7 @@ body {
   gap: 10px;
 }
 
+/* ── Buttons — stamped, hand-labeled ─────────────────────── */
 .btn-edit-profile,
 .btn-follow-profile,
 .btn-following,
@@ -79,43 +133,56 @@ body {
 .ul-unfollow-btn {
   border: none;
   border-radius: 999px;
-  padding: 10px 16px;
-  font-weight: 700;
+  padding: 10px 18px;
+  font-family: var(--font-hand);
+  font-size: 16px;
   cursor: pointer;
   text-decoration: none;
-  color: white;
+  color: var(--card);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .btn-edit-profile,
 .btn-follow-profile {
-  background: linear-gradient(135deg, #6c63ff, #3b82f6);
+  background: var(--accent);
+  box-shadow: 2px 3px 8px rgba(74,63,48,0.2);
 }
+.btn-edit-profile:hover,
+.btn-follow-profile:hover { background: #c17548; transform: translateY(-1px); }
 
 .btn-following,
 .ul-unfollow-btn {
-  background: #2d3348;
+  background: var(--card2);
+  color: var(--ink-soft);
+  border: 1px dashed var(--border);
 }
+.btn-following:hover,
+.ul-unfollow-btn:hover { color: var(--accent3); border-color: var(--accent3); }
 
 .profile-info {
   margin-bottom: 18px;
 }
 
 .profile-displayname {
-  font-size: 28px;
-  font-weight: 800;
+  font-family: var(--font-title);
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--ink);
   margin-bottom: 2px;
 }
 
 .profile-username {
   display: inline-block;
-  color: #9aa3c7;
+  color: var(--ink-soft);
   margin-bottom: 10px;
+  font-size: 14px;
 }
 
 .profile-bio {
-  color: #d7dcef;
+  color: var(--ink);
   line-height: 1.6;
   max-width: 720px;
+  font-size: 14.5px;
 }
 
 .profile-meta-row {
@@ -123,40 +190,51 @@ body {
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 12px;
-  color: #8a93b5;
+  color: var(--ink-soft);
   font-size: 13px;
+  font-family: var(--font-hand);
 }
 
+/* ── Stats & tabs — little pinned tag stickers ───────────── */
 .stats-bar,
 .tab-bar {
   display: flex;
   gap: 10px;
-  margin: 18px 0 10px;
+  margin: 20px 0 12px;
+  flex-wrap: wrap;
 }
 
 .stat-btn,
 .tab-pill {
-  background: var(--panel-2);
-  color: #e4e8f5;
-  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--ink);
+  border: 1px dashed var(--border);
   border-radius: 999px;
-  padding: 10px 14px;
-  font-weight: 600;
+  padding: 9px 16px;
+  font-family: var(--font-hand);
+  font-size: 15px;
   cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
+
+.stat-btn:hover,
+.tab-pill:hover { transform: translateY(-1px) rotate(-1deg); }
 
 .stat-btn--active,
 .tab-pill--active {
-  background: rgba(108, 99, 255, 0.18);
-  color: #a79dff;
-  border-color: rgba(108, 99, 255, 0.35);
+  background: var(--tape);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-style: solid;
+  transform: rotate(-1deg);
 }
 
+/* ── User list — a stack of small pinned index cards ─────── */
 .user-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 .user-list-row {
@@ -164,11 +242,19 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
-  background: var(--panel-2);
+  padding: 13px 16px;
+  background: var(--card2);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 6px;
+  box-shadow: 2px 3px 7px rgba(74,63,48,0.1);
+  position: relative;
+  transform: rotate(-0.4deg);
 }
+
+.user-list-row:nth-child(even) { transform: rotate(0.4deg); }
+.user-list-row:nth-child(3n)   { transform: rotate(-0.2deg); }
+
+.user-list-row:hover { border-color: var(--accent); }
 
 .user-list-link {
   display: flex;
@@ -177,6 +263,7 @@ body {
   text-decoration: none;
   color: inherit;
   flex: 1;
+  min-width: 0;
 }
 
 .ul-avatar {
@@ -185,15 +272,19 @@ body {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  border: 2px solid var(--card);
+  outline: 2px solid var(--border);
 }
 
 .ul-avatar--ph {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6c63ff, #3b82f6);
-  color: white;
+  background: var(--accent);
+  color: var(--card);
+  font-family: var(--font-title);
   font-weight: 700;
+  font-size: 19px;
 }
 
 .ul-info {
@@ -203,24 +294,31 @@ body {
 }
 
 .ul-name {
-  font-weight: 700;
+  font-family: var(--font-hand);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--ink);
 }
 
 .ul-username,
 .ul-bio {
-  color: #8a93b5;
+  color: var(--ink-soft);
   font-size: 13px;
 }
 
+/* ── Empty tab — a blank corner of the board ─────────────── */
 .empty-tab {
-  padding: 24px;
+  padding: 30px 24px;
   text-align: center;
-  color: #8a93b5;
-  background: var(--panel-2);
-  border: 1px dashed var(--border);
-  border-radius: 16px;
+  color: var(--ink-soft);
+  font-family: var(--font-hand);
+  font-size: 16px;
+  background: var(--card2);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
 }
 
+/* ── Toasts — little notes that pop up in the corner ─────── */
 .toast-stack {
   position: fixed;
   top: 16px;
@@ -232,15 +330,19 @@ body {
 }
 
 .toast {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: #1f2435;
-  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
   border: 1px solid var(--border);
+  font-family: var(--font-hand);
+  font-size: 15px;
+  box-shadow: 2px 4px 10px rgba(74,63,48,0.18);
+  transform: rotate(-1deg);
 }
 
 .toast--success {
-  background: rgba(34, 197, 94, 0.16);
-  color: #bbf7d0;
-  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(111,154,124,0.16);
+  color: #3a5843;
+  border-color: rgba(111,154,124,0.4);
 }

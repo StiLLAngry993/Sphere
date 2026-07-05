@@ -30,7 +30,7 @@
 <script>
 const CSRF = "{{ csrf_token }}";
 const CONV_PK = {{ conv.pk|default:"null" }};
-const GIPHY_KEY = "";
+const GIPHY_KEY = "aDcpPMcJ2qab2ukgsjrslF9gnRdJFtmw";
 const CHAT_WS_URL = "{{ ws_url|default:'__SPHERE_CHAT_WS_URL__' }}";
 const CURRENT_USER_ID = {{ request.user.id|default:"null" }};
 const CURRENT_USERNAME = "{{ request.user.username|default:''|escapejs }}";
@@ -65,79 +65,84 @@ function connectChatSocket() {
 }
 
 function appendLiveMessage(payload) {
-  const area = document.getElementById("messagesArea");
-  if (!area) return;
+    const area = document.getElementById("messagesArea");
+    if (!area) return;
 
-  const emptyState = area.querySelector(".messages-empty");
-  if (emptyState) {
-    emptyState.remove();
-  }
-
-  const row = document.createElement("div");
-  row.className = `msg-row ${payload.sender_id === CURRENT_USER_ID ? "msg-row--own" : "msg-row--other"}`;
-  row.id = `msg-${payload.message_id}`;
-  row.dataset.id = payload.message_id;
-
-  const senderName =
-    payload.sender_display_name ||
-    payload.sender_username ||
-    CURRENT_USERNAME;
-
-  const timeLabel = payload.created_at
-    ? new Date(payload.created_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "now";
-
-  let avatarHTML = "";
-
-  if (payload.sender_id !== CURRENT_USER_ID) {
-    if (payload.sender_profile_picture) {
-      avatarHTML = `
-        <a href="/profile/${payload.sender_username}/">
-          <img
-            class="msg-avatar"
-            src="${payload.sender_profile_picture}"
-            alt="${senderName}"
-          >
-        </a>
-      `;
-    } else {
-      avatarHTML = `
-        <a href="/profile/${payload.sender_username}/">
-          <div class="msg-avatar msg-avatar--ph">
-            ${(senderName || "?").charAt(0).toUpperCase()}
-          </div>
-        </a>
-      `;
+    const emptyState = area.querySelector(".messages-empty");
+    if (emptyState) {
+        emptyState.remove();
     }
-  }
 
-  row.innerHTML = `
-    ${avatarHTML}
-    <div class="msg-content-wrap">
-      <div class="msg-bubble">
-        <p class="msg-text">${payload.message}</p>
-        <div class="msg-meta">
-          <span class="msg-time">${timeLabel}</span>
+    const row = document.createElement("div");
+    row.className = `msg-row ${
+        payload.sender_id === CURRENT_USER_ID
+            ? "msg-row--own"
+            : "msg-row--other"
+    }`;
+    row.id = `msg-${payload.message_id}`;
+    row.dataset.id = payload.message_id;
+
+    const senderName =
+        payload.sender_display_name ||
+        payload.sender_username ||
+        CURRENT_USERNAME;
+
+    const timeLabel = payload.created_at
+        ? new Date(payload.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+          })
+        : "now";
+
+    // Profile picture
+    const avatarHTML =
+        payload.sender_id !== CURRENT_USER_ID
+            ? `
+        <a href="/profile/${payload.sender_username}/">
+            ${
+                payload.sender_profile_picture
+                    ? `<img class="msg-avatar" src="${payload.sender_profile_picture}" alt="${senderName}">`
+                    : `<div class="msg-avatar msg-avatar--ph">
+                            ${(senderName || "?").charAt(0).toUpperCase()}
+                       </div>`
+            }
+        </a>
+    `
+            : "";
+
+    // Message text
+    const textHTML = payload.message
+        ? `<p class="msg-text">${payload.message}</p>`
+        : "";
+
+    // GIF
+    const gifHTML = payload.gif_url
+        ? `
+        <img
+            src="${payload.gif_url}"
+            class="chat-gif"
+            alt="GIF"
+            onclick="openImg('${payload.gif_url}')"
+        >
+    `
+        : "";
+
+    row.innerHTML = `
+        ${avatarHTML}
+        <div class="msg-content-wrap">
+            <div class="msg-bubble">
+                ${textHTML}
+                ${gifHTML}
+                <div class="msg-meta">
+                    <span class="msg-time">${timeLabel}</span>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  `;
+    `;
 
-  area.appendChild(row);
-  area.scrollTop = area.scrollHeight;
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
 }
-function filterConvs(q) {
-  q = q.toLowerCase();
-  document.querySelectorAll('.conv-item').forEach(el => {
-    const name = (el.dataset.name || '').toLowerCase();
-    el.style.display = name.includes(q) ? 'flex' : 'none';
-  });
-}
-
-let replyId = null;
 
 function setReply(id, author, text) {
   replyId = id;

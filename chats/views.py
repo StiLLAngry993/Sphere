@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from .models import (
     Conversation, ConversationMember,
     Message, Attachment, MessageReaction, ReadReceipt
@@ -292,24 +294,53 @@ def delete_message(request, msg_id):
 def send_gif(request, pk):
     """Send a Giphy GIF into a conversation."""
     conv = get_object_or_404(Conversation, pk=pk)
+
     if not conv.members.filter(user=request.user).exists():
         return JsonResponse({"error": "Not a member"}, status=403)
 
     gif_url = request.POST.get("gif_url", "")
-    gif_id  = request.POST.get("gif_id", "")
+    gif_id = request.POST.get("gif_id", "")
+
     if not gif_url:
         return JsonResponse({"error": "No GIF"}, status=400)
 
+    # Create message
     msg = Message.objects.create(
         conversation=conv,
         sender=request.user,
         text="",
     )
+
+    # Save GIF attachment
     Attachment.objects.create(
         message=msg,
         file_type="gif",
         gif_url=gif_url,
         gif_id=gif_id,
     )
+
     conv.save(update_fields=["updated_at"])
+
+    # Broadcast to websocket
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        f"chat_{conv.pk}",
+        {
+            "type": "chat_message",
+            "message": "",
+            "message_id": msg.id,
+            "sender_id": msg.sender.id,
+            "sender_username": msg.sender.username,
+            "sender_display_name": msg.sender.display_name or msg.sender.username,
+            "sender_profile_picture": (
+                msg.sender.profile_picture.url
+                if msg.sender.profile_picture else ""
+            ),
+            "gif_url": gif_url,
+            "gif_id": gif_id,
+            "created_at": msg.created_at.isoformat(),
+        },
+    )
+
     return JsonResponse({"ok": True})

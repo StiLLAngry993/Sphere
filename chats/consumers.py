@@ -3,7 +3,12 @@ import json
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-from .models import Conversation, ConversationMember, Message
+from .models import (
+    Conversation,
+    ConversationMember,
+    Message,
+    Attachment,
+)
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -21,15 +26,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_add(
             self.room_group_name,
-            self.channel_name
+            self.channel_name,
         )
+
         await self.accept()
 
     async def disconnect(self, close_code):
         if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(
                 self.room_group_name,
-                self.channel_name
+                self.channel_name,
             )
 
     async def receive(self, text_data):
@@ -44,6 +50,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         message = await self.save_message(message_text)
+
+        attachment = await self.get_gif_attachment(message.id)
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -62,6 +70,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     if message.sender.profile_picture
                     else ""
                 ),
+                "gif_url": attachment.gif_url if attachment else "",
+                "gif_id": attachment.gif_id if attachment else "",
                 "created_at": message.created_at.isoformat(),
             },
         )
@@ -76,6 +86,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "sender_username": event["sender_username"],
                     "sender_display_name": event["sender_display_name"],
                     "sender_profile_picture": event["sender_profile_picture"],
+                    "gif_url": event["gif_url"],
+                    "gif_id": event["gif_id"],
                     "created_at": event["created_at"],
                 }
             )
@@ -90,7 +102,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         return ConversationMember.objects.filter(
             conversation=conversation,
-            user=user
+            user=user,
         ).exists()
 
     @database_sync_to_async
@@ -106,3 +118,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         conversation.save(update_fields=["updated_at"])
 
         return message
+
+    @database_sync_to_async
+    def get_gif_attachment(self, message_id):
+        return (
+            Attachment.objects.filter(
+                message_id=message_id,
+                file_type="gif",
+            )
+            .first()
+        )

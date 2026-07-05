@@ -1,14 +1,15 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ═════════════════════════════════════════════════════════════════
+   STORY VIEWER — a dim, warm room to look at one pinned photo at
+   a time. Stays dark (so the photo itself still pops), but every
+   piece of chrome around it is warm paper and handwriting now.
+═════════════════════════════════════════════════════════════════ */
 
-:root {
-  --grad: linear-gradient(135deg, #6c63ff, #e91e8c);
-  --font: 'Segoe UI', system-ui, sans-serif;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
   height: 100%;
-  background: #000;
-  font-family: var(--font);
+  background: #1b1710; /* warm near-black, not cold sci-fi black */
+  font-family: var(--font-body);
   overflow: hidden;
 }
 
@@ -20,32 +21,32 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: #1b1710;
 }
 
-/* ── Progress bars ── */
+/* ── Progress bars — little strips of tape ticking across ── */
 .progress-bars {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
-  gap: 4px;
-  padding: 10px 12px 0;
+  gap: 5px;
+  padding: 12px 14px 0;
   z-index: 10;
 }
 
 .pb-wrap {
   flex: 1;
-  height: 3px;
-  background: rgba(255,255,255,0.3);
+  height: 4px;
+  background: rgba(242,226,168,0.25); /* faded tape color */
   border-radius: 99px;
   overflow: hidden;
 }
 
 .pb-fill {
   height: 100%;
-  background: #fff;
+  background: var(--tape, #f2e2a8);
   width: 0%;
   transition: width 0.05s linear;
   border-radius: 99px;
@@ -54,7 +55,7 @@ html, body {
 /* ── Header ── */
 .viewer-header {
   position: absolute;
-  top: 20px;
+  top: 22px;
   left: 0;
   right: 0;
   display: flex;
@@ -76,16 +77,17 @@ html, body {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255,255,255,0.6);
+  border: 2px solid rgba(255,248,234,0.75);
 }
 .viewer-pfp--ph {
-  background: linear-gradient(135deg, #6c63ff, #e91e8c);
+  background: var(--accent, #d68256);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-title, 'Caveat', cursive);
   font-weight: 700;
-  font-size: 16px;
-  color: #fff;
+  font-size: 18px;
+  color: #fffdf7;
 }
 
 .viewer-author-info {
@@ -93,14 +95,14 @@ html, body {
   flex-direction: column;
 }
 .viewer-author-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
+  font-family: var(--font-hand, 'Patrick Hand', cursive);
+  font-size: 16px;
+  color: #fffdf7;
   text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 .viewer-story-count {
   font-size: 11px;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,248,234,0.65);
 }
 
 .viewer-header-actions {
@@ -109,23 +111,24 @@ html, body {
   gap: 8px;
 }
 
+/* Buttons feel like little wooden pin-heads, not glass chips */
 .viewer-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.4);
-  border: none;
+  background: rgba(74,63,48,0.55);
+  border: 1px solid rgba(242,226,168,0.3);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: #fffdf7;
   text-decoration: none;
   transition: background 0.15s;
   backdrop-filter: blur(4px);
 }
-.viewer-btn:hover { background: rgba(0,0,0,0.7); }
-.viewer-btn--delete:hover { background: rgba(239,68,68,0.6); }
+.viewer-btn:hover { background: rgba(74,63,48,0.85); }
+.viewer-btn--delete:hover { background: rgba(193,92,107,0.65); }
 
 /* ── Media ── */
 .viewer-media {
@@ -155,9 +158,9 @@ html, body {
   left: 0;
   right: 0;
   text-align: center;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
+  color: #fffdf7;
+  font-family: var(--font-hand, 'Patrick Hand', cursive);
+  font-size: 18px;
   text-shadow: 0 2px 8px rgba(0,0,0,0.9);
   padding: 0 24px;
   pointer-events: none;
